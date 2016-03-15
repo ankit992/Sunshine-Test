@@ -8,7 +8,9 @@ import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.example.android.sunshine.app.Models.ServiceWeatherDetailModel;
 import com.example.android.sunshine.app.Models.ServiceWeatherModel;
+import com.example.android.sunshine.app.Presenters.WeatherDetailPresenter;
 import com.example.android.sunshine.app.Presenters.WeatherPresenter;
 import com.example.android.sunshine.app.Views.DetailFragment;
 import com.example.android.sunshine.app.Views.ForecastFragment;
@@ -37,9 +39,11 @@ public class MainActivity extends ActionBarActivity implements ForecastFragment.
             // adding or replacing the detail fragment using a
             // fragment transaction.
             if (savedInstanceState == null) {
+                DetailFragment detailFragment=new DetailFragment();
                 getSupportFragmentManager().beginTransaction()
-                        .replace(R.id.weather_detail_container, new DetailFragment(), DETAILFRAGMENT_TAG)
+                        .replace(R.id.weather_detail_container, detailFragment, DETAILFRAGMENT_TAG)
                         .commit();
+
             }
         } else {
             mTwoPane = false;
@@ -105,7 +109,10 @@ public class MainActivity extends ActionBarActivity implements ForecastFragment.
             args.putParcelable(DetailFragment.DETAIL_URI, contentUri);
 
             DetailFragment fragment = new DetailFragment();
+
             fragment.setArguments(args);
+            WeatherDetailPresenter presenter=new WeatherDetailPresenter(new ServiceWeatherDetailModel(this),fragment);
+
 
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.weather_detail_container, fragment, DETAILFRAGMENT_TAG)

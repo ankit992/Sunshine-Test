@@ -172,8 +172,8 @@ private  Loader<Cursor> cursorLoaderData;
 //            );
             cursorLoaderRequired.onNext(null);
 
-            Log.d("loaderAcquireStatus", cursorLoaderData.toString());
-            Log.d("loaderAcquireStatus2", cursorLoaderData.toString());
+//            Log.d("loaderAcquireStatus", cursorLoaderData.toString());
+  //          Log.d("loaderAcquireStatus2", cursorLoaderData.toString());
 //            while (cursorLoaderData==null)
 //            {
 //                SystemClock.sleep(50);
