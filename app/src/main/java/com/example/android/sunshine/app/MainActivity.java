@@ -8,7 +8,8 @@ import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import com.example.android.sunshine.app.Models.sync.SunshineSyncAdapter;
+import com.example.android.sunshine.app.Models.ServiceWeatherModel;
+import com.example.android.sunshine.app.Presenters.WeatherPresenter;
 import com.example.android.sunshine.app.Views.DetailFragment;
 import com.example.android.sunshine.app.Views.ForecastFragment;
 
@@ -22,6 +23,7 @@ public class MainActivity extends ActionBarActivity implements ForecastFragment.
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         mLocation = Utility.getPreferredLocation(this);
 
@@ -48,7 +50,8 @@ public class MainActivity extends ActionBarActivity implements ForecastFragment.
                 .findFragmentById(R.id.fragment_forecast));
         forecastFragment.setUseTodayLayout(!mTwoPane);
 
-        SunshineSyncAdapter.initializeSyncAdapter(this);
+        WeatherPresenter presenter=new WeatherPresenter(new ServiceWeatherModel(this),forecastFragment);
+
     }
 
     @Override

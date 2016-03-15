@@ -21,6 +21,8 @@ import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.example.android.sunshine.app.Models.ServiceWeatherDetailModel;
+import com.example.android.sunshine.app.Presenters.WeatherDetailPresenter;
 import com.example.android.sunshine.app.Views.DetailFragment;
 
 public class DetailActivity extends ActionBarActivity {
@@ -29,7 +31,7 @@ public class DetailActivity extends ActionBarActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
-
+        DetailFragment fragment = new DetailFragment();
         if (savedInstanceState == null) {
             // Create the detail fragment and add it to the activity
             // using a fragment transaction.
@@ -37,13 +39,15 @@ public class DetailActivity extends ActionBarActivity {
             Bundle arguments = new Bundle();
             arguments.putParcelable(DetailFragment.DETAIL_URI, getIntent().getData());
 
-            DetailFragment fragment = new DetailFragment();
+
             fragment.setArguments(arguments);
 
             getSupportFragmentManager().beginTransaction()
                     .add(R.id.weather_detail_container, fragment)
                     .commit();
         }
+
+        WeatherDetailPresenter presenter=new WeatherDetailPresenter(new ServiceWeatherDetailModel(this),fragment);
     }
 
     @Override

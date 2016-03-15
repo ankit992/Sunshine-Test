@@ -1,4 +1,4 @@
-package com.example.android.sunshine.app;
+package com.example.android.sunshine.app.Views;
 
 import android.content.Context;
 import android.database.Cursor;
@@ -9,7 +9,8 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.example.android.sunshine.app.Views.ForecastFragment;
+import com.example.android.sunshine.app.R;
+import com.example.android.sunshine.app.Utility;
 
 /**
  * {@link ForecastAdapter} exposes a list of weather forecasts

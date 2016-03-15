@@ -7,7 +7,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
-import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -19,16 +18,19 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
-import com.example.android.sunshine.app.ForecastAdapter;
 import com.example.android.sunshine.app.Models.data.WeatherContract;
-import com.example.android.sunshine.app.Models.sync.SunshineSyncAdapter;
 import com.example.android.sunshine.app.R;
 import com.example.android.sunshine.app.Utility;
+
+import rx.Observable;
+import rx.subjects.PublishSubject;
 
 /**
  * Encapsulates fetching the forecast and displaying it as a {@link ListView} layout.
  */
-public class ForecastFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>,WeatherListView {
+public class ForecastFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>,WeatherView {
+    PublishSubject<Void> syncRequired=PublishSubject.create();
+    PublishSubject<Void> loaderRequired=PublishSubject.create();
     public static final String LOG_TAG = ForecastFragment.class.getSimpleName();
     private ForecastAdapter mForecastAdapter;
 
@@ -37,7 +39,6 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
     private boolean mUseTodayLayout;
 
     private static final String SELECTED_KEY = "selected_position";
-
     private static final int FORECAST_LOADER = 0;
     // For the forecast view we're showing only a small subset of the stored data.
     // Specify the columns we need.
@@ -72,8 +73,13 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
     static final int COL_COORD_LONG = 8;
 
     @Override
-    public void setWeatherListData() {
+public Observable<Void> whenSyncRequired(){
+    return syncRequired.asObservable();
+}
 
+    @Override
+    public Observable<Void> whenCursorLoaderRequired() {
+        return loaderRequired.asObservable();
     }
 
     /**
@@ -182,12 +188,7 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
     }
 
     private void updateWeather() {
-        //Intent intent = new Intent(getActivity(), SunshineService.class);
-        //intent.putExtra(SunshineService.Location_Query_Extra,Utility.getPreferredLocation(getActivity()));
-        //getActivity().startService(intent);
-
-
-        SunshineSyncAdapter.syncImmediately(getActivity());
+        syncRequired.onNext(null);
     }
 
     private void openPreferredLocationInMap() {
@@ -225,25 +226,22 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
 
     @Override
     public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
-        // This is called when a new Loader needs to be created.  This
-        // fragment only uses one loader, so we don't care about checking the id.
 
-        // To only show current and future dates, filter the query to return weather only for
-        // dates after or including today.
+        loaderRequired.onNext(null);
+        Log.d("loaderAcquireStatus", cursorLoaderData.toString());
 
-        // Sort order:  Ascending, by date.
-        String sortOrder = WeatherContract.WeatherEntry.COLUMN_DATE + " ASC";
+//        while (cursorLoaderData==null){
+//            SystemClock.sleep(50);
+//        }
 
-        String locationSetting = Utility.getPreferredLocation(getActivity());
-        Uri weatherForLocationUri = WeatherContract.WeatherEntry.buildWeatherLocationWithStartDate(
-                locationSetting, System.currentTimeMillis());
+        Log.d("loaderAcquireStatus2",cursorLoaderData.toString());
+        return cursorLoaderData;
+    }
 
-        return new CursorLoader(getActivity(),
-                weatherForLocationUri,
-                FORECAST_COLUMNS,
-                null,
-                null,
-                sortOrder);
+    Loader<Cursor> cursorLoaderData;
+    @Override
+    public void setCursorLoaderData(Loader<Cursor> cursorLoader){
+        cursorLoaderData=cursorLoader;
     }
 
     @Override

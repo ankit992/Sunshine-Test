@@ -1,18 +1,3 @@
-/*
- * Copyright (C) 2014 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.example.android.sunshine.app.Views;
 
 import android.content.Intent;
@@ -21,10 +6,10 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
-import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.widget.ShareActionProvider;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -38,21 +23,34 @@ import com.example.android.sunshine.app.Models.data.WeatherContract;
 import com.example.android.sunshine.app.Models.data.WeatherContract.WeatherEntry;
 import com.example.android.sunshine.app.R;
 
-import static com.example.android.sunshine.app.Utility.*;
+import rx.Observable;
+import rx.subjects.PublishSubject;
+
+import static com.example.android.sunshine.app.Utility.formatTemperature;
+import static com.example.android.sunshine.app.Utility.getArtResourceForWeatherCondition;
+import static com.example.android.sunshine.app.Utility.getDayName;
+import static com.example.android.sunshine.app.Utility.getFormattedMonthDay;
+import static com.example.android.sunshine.app.Utility.getFormattedWind;
+import static com.example.android.sunshine.app.Utility.isMetric;
 
 /**
  * A placeholder fragment containing a simple view.
  */
-public class DetailFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>,WeatherDetailView {
-
+public class DetailFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>,WeatherView {
+    PublishSubject<Void> syncRequired=PublishSubject.create();
+    PublishSubject<Void> cursorLoaderRequired=PublishSubject.create();
     private static final String LOG_TAG = DetailFragment.class.getSimpleName();
     public static final String DETAIL_URI = "URI";
 
     private static final String FORECAST_SHARE_HASHTAG = " #SunshineApp";
-
+private  Loader<Cursor> cursorLoaderData;
     private ShareActionProvider mShareActionProvider;
     private String mForecast;
-    private Uri mUri;
+
+
+
+    public static Uri mUri;
+
 
     private static final int DETAIL_LOADER = 0;
 
@@ -98,10 +96,10 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     public DetailFragment() {
         setHasOptionsMenu(true);
     }
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+
 
         Bundle arguments = getArguments();
         if (arguments != null) {
@@ -154,71 +152,71 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
     public void onLocationChanged(String newLocation) {
         // replace the uri, since the location has changed
-        Uri uri = mUri;
-        if (null != uri) {
-            long date = WeatherContract.WeatherEntry.getDateFromUri(uri);
-            Uri updatedUri = WeatherContract.WeatherEntry.buildWeatherLocationWithDate(newLocation, date);
-            mUri = updatedUri;
-            getLoaderManager().restartLoader(DETAIL_LOADER, null, this);
-        }
+        setWeatherListData(newLocation);
     }
+
+
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         if ( null != mUri ) {
             // Now create and return a CursorLoader that will take care of
             // creating a Cursor for the data being displayed.
-            return new CursorLoader(
-                    getActivity(),
-                    mUri,
-                    DETAIL_COLUMNS,
-                    null,
-                    null,
-                    null
-            );
+//            return new CursorLoader(
+//                    getActivity(),
+//                    mUri,
+//                    DETAIL_COLUMNS,
+//                    null,
+//                    null,
+//                    null
+//            );
+            cursorLoaderRequired.onNext(null);
+
+            Log.d("loaderAcquireStatus", cursorLoaderData.toString());
+            Log.d("loaderAcquireStatus2", cursorLoaderData.toString());
+//            while (cursorLoaderData==null)
+//            {
+//                SystemClock.sleep(50);
+//            }
+            return cursorLoaderData;
         }
         return null;
     }
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        updateUI(data);
+    }
+
+    private void updateUI(Cursor data) {
         if (data != null && data.moveToFirst()) {
             // Read weather condition ID from cursor
             int weatherId = data.getInt(COL_WEATHER_CONDITION_ID);
-
             // Use weather art image
             mIconView.setImageResource(getArtResourceForWeatherCondition(weatherId));
-
             // Read date from cursor and update views for day of week and date
             long date = data.getLong(COL_WEATHER_DATE);
             String friendlyDateText = getDayName(getActivity(), date);
             String dateText = getFormattedMonthDay(getActivity(), date);
             mFriendlyDateView.setText(friendlyDateText);
             mDateView.setText(dateText);
-
             // Read description from cursor and update view
             String description = data.getString(COL_WEATHER_DESC);
             mDescriptionView.setText(description);
-
             // For accessibility, add a content description to the icon field
             mIconView.setContentDescription(description);
-
             // Read high temperature from cursor and update view
             boolean isMetric = isMetric(getActivity());
-
             double high = data.getDouble(COL_WEATHER_MAX_TEMP);
             String highString = formatTemperature(getActivity(), high);
             mHighTempView.setText(highString);
-
             // Read low temperature from cursor and update view
             double low = data.getDouble(COL_WEATHER_MIN_TEMP);
             String lowString = formatTemperature(getActivity(), low);
             mLowTempView.setText(lowString);
-
             // Read humidity from cursor and update view
             float humidity = data.getFloat(COL_WEATHER_HUMIDITY);
             mHumidityView.setText(getActivity().getString(R.string.format_humidity, humidity));
-
             // Read wind speed and direction from cursor and update view
             float windSpeedStr = data.getFloat(COL_WEATHER_WIND_SPEED);
             float windDirStr = data.getFloat(COL_WEATHER_DEGREES);
@@ -241,8 +239,28 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     @Override
     public void onLoaderReset(Loader<Cursor> loader) { }
 
-    @Override
-    public void setWeatherListData() {
+    public void setWeatherListData(String newLocation) {
+        Uri uri = mUri;
+        if (null != uri) {
+            long date = WeatherEntry.getDateFromUri(uri);
+            Uri updatedUri = WeatherEntry.buildWeatherLocationWithDate(newLocation, date);
+            mUri = updatedUri;
+            getLoaderManager().restartLoader(DETAIL_LOADER, null, this);
+        }
+    }
 
+    @Override
+    public Observable<Void> whenSyncRequired() {
+        return syncRequired.asObservable();
+    }
+
+    @Override
+    public Observable<Void> whenCursorLoaderRequired() {
+        return cursorLoaderRequired.asObservable();
+    }
+
+    @Override
+    public void setCursorLoaderData(Loader<Cursor> cursorLoader) {
+        cursorLoaderData=cursorLoader;
     }
 }
